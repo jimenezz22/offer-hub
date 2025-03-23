@@ -22,7 +22,9 @@
     "dotenv": "^16.4.7",
     "figlet": "^1.8.0",
     "gradient-string": "^3.0.0",
+    "pdfkit": "^0.16.0",
     "pg": "^8.10.0",
+    "puppeteer": "^24.4.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.20"
   },
