@@ -142,7 +142,6 @@ export class InvoiceService {
                 id: client.user_id,
                 name: `${client.username}`,
                 email: client.email,
-                walletAddress: client?.wallet_address,
             },
             
             freelancer: {
