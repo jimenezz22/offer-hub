@@ -6,6 +6,8 @@ import { UsersModule } from '../users/module';
 import { ProjectsModule } from '../projects/module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Transaction } from '../transactions/entity';
+import { InvoiceController } from './controller';
+import { StorageModule } from '../storage/module';
 
 @Module({
   imports: [
@@ -14,7 +16,9 @@ import { Transaction } from '../transactions/entity';
     forwardRef(() => TransactionsModule),
     UsersModule,
     ProjectsModule,
+    StorageModule
   ],
+  controllers: [InvoiceController],
   providers: [InvoiceService],
   exports: [InvoiceService],
 })

@@ -6,6 +6,7 @@ import { ProjectsService } from '../projects/service';
 import { Transaction, TransactionStatus } from '../transactions/entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { StorageService } from '../storage/service';
 
 @Injectable()
 export class InvoiceService {
@@ -19,6 +20,7 @@ export class InvoiceService {
         private readonly projectsService: ProjectsService,
         @InjectRepository(Transaction)
         private readonly transactionRepository: Repository<Transaction>,
+        private readonly storageService: StorageService 
     ) {}
 
     /**
@@ -47,16 +49,16 @@ export class InvoiceService {
             const invoiceData = await this.mapTransactionToInvoiceData(transaction);
             
             // Generate the invoice in PDF and store it in MinIO
-            const invoiceUrl = await this.pdfService.generateInvoice(invoiceData);
+            const relativePath = `invoices/${transactionId}/${invoiceData.id}.pdf`;
             
             // Update the transaction with the invoice URL
             await this.transactionRepository.update(
                 { transaction_id: transactionId },
-                { invoice_path: invoiceUrl }
+                { invoice_path: relativePath }
             );
             
             this.logger.log(`Invoice successfully generated for transaction ${transactionId}`);
-            return invoiceUrl;
+            return relativePath;
         } catch (error) {
             this.logger.error(`Error generating invoice for transaction ${transactionId}: ${error.message}`);
             throw error;
@@ -75,19 +77,13 @@ export class InvoiceService {
             const transaction = await this.transactionsService.findById(transactionId);
             
             // Verify that the user has permission to access this invoice
-            if (transaction.fromUser.user_id !== userId && transaction.toUser.user_id !== userId) {
-                throw new Error('You do not have permission to access this invoice');
-            }
+            if (transaction.fromUser.user_id !== userId && transaction.toUser.user_id !== userId) throw new Error('You do not have permission to access this invoice');
             
             // If the transaction already has a generated invoice, return its URL
-            if (transaction.invoice_path) {
-                return transaction.invoice_path;
-            }
+            if (transaction.invoice_path) return this.storageService.getFileUrl(transaction.invoice_path);
             
             // If there is no invoice but the transaction is completed, generate it
-            if (transaction.status === TransactionStatus.COMPLETED) {
-                return await this.generateInvoiceForTransaction(transactionId);
-            }
+            if (transaction.status === TransactionStatus.COMPLETED) return await this.generateInvoiceForTransaction(transactionId);
             
             throw new NotFoundException('No invoice exists for this transaction');
         } catch (error) {

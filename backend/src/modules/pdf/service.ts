@@ -1,4 +1,4 @@
-import * as PDFKit from 'pdfkit';
+import PDFDocument from 'pdfkit';
 import { Injectable, Logger } from '@nestjs/common';
 import { createWriteStream } from 'fs';
 import { join } from 'path';
@@ -134,7 +134,7 @@ export class PdfService {
     return new Promise<string>(async (resolve, reject) => {
       try {
         // Create a new PDF document
-        const doc = new PDFKit({ margin: LAYOUT.PAGE_MARGIN });
+        const doc = new PDFDocument({ margin: LAYOUT.PAGE_MARGIN });
         
         // Pipe its output to a temporary file
         doc.pipe(createWriteStream(tempFilePath));
@@ -262,7 +262,7 @@ export class PdfService {
   /**
    * Adds the header to the PDF document
    */
-  private addHeader(doc: PDFKit.PDFDocument, invoiceData: InvoiceData): void {
+  private addHeader(doc: typeof PDFDocument, invoiceData: InvoiceData): void {
     // Document title
     doc.fontSize(STYLE.HEADER_FONT_SIZE)
        .font('Helvetica-Bold')
@@ -274,7 +274,7 @@ export class PdfService {
   /**
    * Adds the information of the involved parties (client and freelancer)
    */
-  private addPartyInformation(doc: PDFKit.PDFDocument, invoiceData: InvoiceData): void {
+  private addPartyInformation(doc: typeof PDFDocument, invoiceData: InvoiceData): void {
     const startY = doc.y;
 
     // Freelancer information (issuer)
@@ -300,7 +300,7 @@ export class PdfService {
   /**
    * Adds the invoice information (number, dates, etc.)
    */
-  private addInvoiceInformation(doc: PDFKit.PDFDocument, invoiceData: InvoiceData): void {
+  private addInvoiceInformation(doc: typeof PDFDocument, invoiceData: InvoiceData): void {
     doc.font('Helvetica-Bold').text('Invoice Information:');
     doc.font('Helvetica');
     
@@ -343,7 +343,7 @@ export class PdfService {
   /**
    * Adds the items/services to the invoice
    */
-  private addItems(doc: PDFKit.PDFDocument, invoiceData: InvoiceData): void {
+  private addItems(doc: typeof PDFDocument, invoiceData: InvoiceData): void {
     // Table headers
     this.drawTableHeader(doc);
 
@@ -390,7 +390,7 @@ export class PdfService {
   /**
    * Draws the table headers for the items
    */
-  private drawTableHeader(doc: PDFKit.PDFDocument): void {
+  private drawTableHeader(doc: typeof PDFDocument): void {
     doc.font('Helvetica-Bold');
     
     // Header background
@@ -423,7 +423,7 @@ export class PdfService {
   /**
    * Adds the totals to the invoice
    */
-  private addTotals(doc: PDFKit.PDFDocument, invoiceData: InvoiceData): void {
+  private addTotals(doc: typeof PDFDocument, invoiceData: InvoiceData): void {
     // Separator line
     const y = doc.y;
     doc.strokeColor(STYLE.SEPARATOR_COLOR)
@@ -470,7 +470,7 @@ export class PdfService {
   /**
    * Adds the footer to the invoice
    */
-  private addFooter(doc: PDFKit.PDFDocument, invoiceData: InvoiceData): void {
+  private addFooter(doc: typeof PDFDocument, invoiceData: InvoiceData): void {
     doc.font('Helvetica');
     
     // Status information
@@ -508,8 +508,12 @@ export class PdfService {
   /**
    * Formats amounts with currency symbol
    */
-  private formatCurrency(amount: number, currency: string): string {
+  private formatCurrency(amount: any, currency: string): string {
+    const numericAmount = Number(amount);
+
+    if (isNaN(numericAmount)) return `${currency}0.00`;
+
     const symbol = BUSINESS.CURRENCY_SYMBOLS[currency] || currency;
-    return `${symbol}${amount.toFixed(2)}`;
+    return `${symbol}${numericAmount.toFixed(2)}`;
   }
 }
